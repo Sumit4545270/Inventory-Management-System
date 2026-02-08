@@ -5,6 +5,13 @@ This project demonstrates a **College Lab Management system** with dashboard, in
 
 ---
 
+## 0️⃣ Design By Sumit Badgujar.
+InventoryProject-Design
+<p align="center">
+  <img src="InventoryProject-Design.png" width="900">
+</p>
+---
+
 ## 1️⃣ Dashboard
 <p align="center">
   <img src="1_Dashboard.jpg" width="900">
