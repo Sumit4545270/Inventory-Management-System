@@ -8,4 +8,3 @@ on:
 jobs:
   run:
     uses: Sumit4545270/.github/.github/workflows/unused-files.yml@main
-``
