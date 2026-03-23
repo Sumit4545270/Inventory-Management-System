@@ -1,3 +1,6 @@
+<!-- UNUSED-FILES-START -->
+<!-- UNUSED-FILES-END -->
+``
 # Lab Management Project
 
 ## Project Overview
