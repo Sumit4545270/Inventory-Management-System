@@ -50,6 +50,8 @@ InventoryProject-Design
 ## 📌 Conclusion
 This project demonstrates the **Lab Management System** with visual screenshots for dashboard, inventory, and resource management.
 
+<!-- CLEANUP_START -->
+<!-- CLEANUP_END -->
 
 <!-- CLEANUP_START -->
 
