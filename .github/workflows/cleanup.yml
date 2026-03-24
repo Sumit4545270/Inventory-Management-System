@@ -6,23 +6,25 @@ on:
     - cron: "0 0 * * 0"
 
 permissions:
-  contents: write   # ✅ THIS FIXES YOUR ERROR
+  contents: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4   # updated version
+      - uses: actions/checkout@v4
 
-      - name: Run script
+      - name: Run scanner
         run: node scripts/cleanup-check.js
 
-      - name: Commit report
+      - name: Update README
+        run: node scripts/update-readme.js
+
+      - name: Commit changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add unused-files.json
-          git commit -m "cleanup report" || echo "No changes"
+          git add .
+          git commit -m "auto cleanup update" || echo "No changes"
           git push
