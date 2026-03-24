@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const DAYS_OLD = 90;
+const DAYS_OLD = 30;
 const now = Date.now();
 
 function getFiles() {
