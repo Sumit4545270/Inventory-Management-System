@@ -1,0 +1,24 @@
+name: Repo Cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run checker
+        run: node scripts/cleanup-check.js
+
+      - name: Save report
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@example.com"
+          git add unused-files.json
+          git commit -m "cleanup report" || echo "no changes"
+          git push
