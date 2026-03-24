@@ -1,41 +1,49 @@
+const { execSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
-const DAYS_OLD = 30; // 1 month
+const DAYS_OLD = 30;
 const now = Date.now();
 
-function scan(dir) {
-  let results = [];
-
-  fs.readdirSync(dir).forEach(file => {
-    if (file === 'node_modules' || file === '.git') return;
-
-    const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      results = results.concat(scan(fullPath));
-    } else {
-      const ageDays = (now - stat.birthtimeMs) / (1000 * 60 * 60 * 24);
-
-      if (ageDays > DAYS_OLD) {
-        const lastUpdated = new Date(stat.birthtimeMs).toISOString().split('T')[0];
-
-        results.push({
-          file: fullPath,
-          lastUpdated,
-          ageDays: Math.floor(ageDays),
-          ageMonths: (ageDays / 30).toFixed(1)
-        });
-      }
-    }
-  });
-
-  return results;
+function getFiles() {
+  return execSync('git ls-files').toString().split('\n');
 }
 
-const data = scan('./');
+// ✅ Get FIRST commit date (file creation in git)
+function getFirstCommitDate(file) {
+  try {
+    const output = execSync(`git log --diff-filter=A --follow --format=%ct -- "${file}" | tail -1`)
+      .toString()
+      .trim();
 
-fs.writeFileSync('unused-files.json', JSON.stringify(data, null, 2));
+    return output ? parseInt(output) * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 
-console.log("Found:", data.length);
+const files = getFiles();
+let result = [];
+
+files.forEach(file => {
+  if (!file) return;
+
+  const firstCommit = getFirstCommitDate(file);
+  if (!firstCommit) return;
+
+  const ageDays = (now - firstCommit) / (1000 * 60 * 60 * 24);
+
+  if (ageDays > DAYS_OLD) {
+    const lastUpdated = new Date(firstCommit).toISOString().split('T')[0];
+
+    result.push({
+      file,
+      lastUpdated,
+      ageDays: Math.floor(ageDays),
+      ageMonths: (ageDays / 30).toFixed(1)
+    });
+  }
+});
+
+fs.writeFileSync('unused-files.json', JSON.stringify(result, null, 2));
+
+console.log("Found:", result.length);
