@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DAYS_OLD = 365;
+const DAYS_OLD = 90;
 const now = Date.now();
 
 function scan(dir) {
