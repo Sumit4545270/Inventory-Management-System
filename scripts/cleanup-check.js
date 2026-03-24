@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const DAYS_OLD = 30;
+const DAYS_OLD = 30; // 1 month
 const now = Date.now();
 
 function getFiles() {
@@ -23,8 +23,13 @@ let result = [];
 files.forEach(file => {
   if (!file) return;
 
-  const lastCommit = getLastCommitDate(file);
-  if (!lastCommit) return;
+  let lastCommit = getLastCommitDate(file);
+
+  //  Fallback if git history is not reliable
+  if (!lastCommit) {
+    const stat = fs.statSync(file);
+    lastCommit = stat.mtimeMs;
+  }
 
   const ageDays = (now - lastCommit) / (1000 * 60 * 60 * 24);
 
