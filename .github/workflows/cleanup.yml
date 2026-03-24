@@ -5,20 +5,24 @@ on:
   schedule:
     - cron: "0 0 * * 0"
 
+permissions:
+  contents: write   # ✅ THIS FIXES YOUR ERROR
+
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4   # updated version
 
-      - name: Run checker
+      - name: Run script
         run: node scripts/cleanup-check.js
 
-      - name: Save report
+      - name: Commit report
         run: |
-          git config user.name "bot"
-          git config user.email "bot@example.com"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
           git add unused-files.json
-          git commit -m "cleanup report" || echo "no changes"
+          git commit -m "cleanup report" || echo "No changes"
           git push
