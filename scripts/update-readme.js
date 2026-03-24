@@ -10,17 +10,21 @@ if (!fs.existsSync('unused-files.json')) {
 const data = JSON.parse(fs.readFileSync('unused-files.json'));
 
 let table = `
-## 🧹 Unused Files (older than 1 year)
+## 🧹 Unused Files (older than 1 month)
 
 | File | Last Updated | Age | Delete |
 |------|-------------|-----|--------|
 `;
 
-data.forEach(f => {
-  const deleteLink = `https://github.com/${repo}/blob/main/${f.file}`;
+if (data.length === 0) {
+  table += `| ✅ No old files found | - | - | - |\n`;
+} else {
+  data.forEach(f => {
+    const deleteLink = `https://github.com/${repo}/blob/main/${f.file}`;
 
-  table += `| ${f.file} | ${f.lastUpdated} | ${f.ageYears} yrs | [Delete](${deleteLink}) |\n`;
-});
+    table += `| ${f.file} | ${f.lastUpdated} | ${f.ageMonths} months | [Delete](${deleteLink}) |\n`;
+  });
+}
 
 let readme = fs.existsSync('README.md') ? fs.readFileSync('README.md', 'utf-8') : '';
 
