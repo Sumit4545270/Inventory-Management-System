@@ -1,50 +1,41 @@
-const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 const DAYS_OLD = 30; // 1 month
 const now = Date.now();
 
-function getFiles() {
-  return execSync('git ls-files').toString().split('\n');
+function scan(dir) {
+  let results = [];
+
+  fs.readdirSync(dir).forEach(file => {
+    if (file === 'node_modules' || file === '.git') return;
+
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+
+    if (stat.isDirectory()) {
+      results = results.concat(scan(fullPath));
+    } else {
+      const ageDays = (now - stat.birthtimeMs) / (1000 * 60 * 60 * 24);
+
+      if (ageDays > DAYS_OLD) {
+        const lastUpdated = new Date(stat.birthtimeMs).toISOString().split('T')[0];
+
+        results.push({
+          file: fullPath,
+          lastUpdated,
+          ageDays: Math.floor(ageDays),
+          ageMonths: (ageDays / 30).toFixed(1)
+        });
+      }
+    }
+  });
+
+  return results;
 }
 
-function getLastCommitDate(file) {
-  try {
-    const output = execSync(`git log -1 --format=%ct -- "${file}"`).toString().trim();
-    return parseInt(output) * 1000;
-  } catch {
-    return null;
-  }
-}
+const data = scan('./');
 
-const files = getFiles();
-let result = [];
+fs.writeFileSync('unused-files.json', JSON.stringify(data, null, 2));
 
-files.forEach(file => {
-  if (!file) return;
-
-  let lastCommit = getLastCommitDate(file);
-
-  //  Fallback if git history is not reliable
-  if (!lastCommit) {
-    const stat = fs.statSync(file);
-    lastCommit = stat.mtimeMs;
-  }
-
-  const ageDays = (now - lastCommit) / (1000 * 60 * 60 * 24);
-
-  if (ageDays > DAYS_OLD) {
-    const lastUpdated = new Date(lastCommit).toISOString().split('T')[0];
-
-    result.push({
-      file,
-      lastUpdated,
-      ageDays: Math.floor(ageDays),
-      ageMonths: (ageDays / 30).toFixed(1)
-    });
-  }
-});
-
-fs.writeFileSync('unused-files.json', JSON.stringify(result, null, 2));
-
-console.log("Found:", result.length);
+console.log("Found:", data.length);
