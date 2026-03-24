@@ -3,11 +3,14 @@ const fs = require('fs');
 
 const now = Date.now();
 
-// Get all tracked files
+// ❌ Ignore these folders (IMPORTANT)
+const IGNORE = ['assets', 'node_modules', '.github', 'scripts'];
+
+// Get files
 const files = execSync('git ls-files')
   .toString()
   .split('\n')
-  .filter(f => f && !f.includes('.github') && !f.includes('scripts'));
+  .filter(f => f && !IGNORE.some(i => f.startsWith(i)));
 
 // Get last commit date
 function getLastCommit(file) {
@@ -19,20 +22,57 @@ function getLastCommit(file) {
   }
 }
 
-// Generate output
-let output = `## 📂 Repository File Explorer\n\n`;
+// Build tree
+function buildTree(files) {
+  const tree = {};
 
-files.forEach(file => {
-  const lastCommit = getLastCommit(file);
-  if (!lastCommit) return;
+  files.forEach(file => {
+    const parts = file.split('/');
+    let current = tree;
 
-  const ageDays = Math.floor((now - lastCommit) / (1000 * 60 * 60 * 24));
-  const lastUpdated = new Date(lastCommit).toISOString().split('T')[0];
+    parts.forEach((part, index) => {
+      if (!current[part]) {
+        current[part] = index === parts.length - 1 ? null : {};
+      }
+      current = current[part];
+    });
+  });
 
-  output += `- 📄 ${file} (📅 ${lastUpdated}, ⏳ ${ageDays} days)\n`;
-});
+  return tree;
+}
 
-// Save result
-fs.writeFileSync('repo-tree.md', output);
+// Generate tree view
+function printTree(obj, prefix = '') {
+  let output = '';
 
-console.log("Tree generated successfully");
+  for (const key in obj) {
+    if (obj[key] === null) {
+      const lastCommit = getLastCommit(prefix + key);
+      if (!lastCommit) continue;
+
+      const ageDays = Math.floor((now - lastCommit) / (1000 * 60 * 60 * 24));
+      const lastUpdated = new Date(lastCommit).toISOString().split('T')[0];
+
+      output += `├── 📄 ${key} (📅 ${lastUpdated}, ⏳ ${ageDays}d)\n`;
+    } else {
+      output += `├── 📁 ${key}/\n`;
+      output += printTree(obj[key], prefix + key + '/');
+    }
+  }
+
+  return output;
+}
+
+const tree = buildTree(files);
+
+const finalOutput = `
+## 📂 Repository Structure
+
+\`\`\`
+${printTree(tree)}
+\`\`\`
+`;
+
+fs.writeFileSync('repo-tree.md', finalOutput);
+
+console.log("Clean tree generated ✅");
