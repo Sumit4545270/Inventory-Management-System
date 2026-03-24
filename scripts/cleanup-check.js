@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const DAYS_OLD = 180; // 6 months
+const DAYS_OLD = 365;
+const now = Date.now();
 
 function scan(dir) {
   let results = [];
-  const now = Date.now();
 
   fs.readdirSync(dir).forEach(file => {
     if (file === 'node_modules' || file === '.git') return;
@@ -16,10 +16,17 @@ function scan(dir) {
     if (stat.isDirectory()) {
       results = results.concat(scan(fullPath));
     } else {
-      const age = (now - stat.mtimeMs) / (1000 * 60 * 60 * 24);
+      const ageDays = (now - stat.mtimeMs) / (1000 * 60 * 60 * 24);
 
-      if (age > DAYS_OLD) {
-        results.push({ file: fullPath, days: Math.floor(age) });
+      if (ageDays > DAYS_OLD) {
+        const lastUpdated = new Date(stat.mtimeMs).toISOString().split('T')[0];
+
+        results.push({
+          file: fullPath,
+          lastUpdated,
+          ageDays: Math.floor(ageDays),
+          ageYears: (ageDays / 365).toFixed(1)
+        });
       }
     }
   });
@@ -29,6 +36,6 @@ function scan(dir) {
 
 const data = scan('./');
 
-fs.writeFileSync("unused-files.json", JSON.stringify(data, null, 2));
+fs.writeFileSync('unused-files.json', JSON.stringify(data, null, 2));
 
-console.log("Done:", data.length);
+console.log("Found:", data.length);
