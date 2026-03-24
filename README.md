@@ -49,3 +49,6 @@ InventoryProject-Design
 
 ## 📌 Conclusion
 This project demonstrates the **Lab Management System** with visual screenshots for dashboard, inventory, and resource management.
+
+<!-- TREE_START -->
+<!-- TREE_END -->
