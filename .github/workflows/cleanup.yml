@@ -1,0 +1,31 @@
+name: Repo Explorer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate file tree
+        run: node scripts/generate-tree.js
+
+      - name: Update README
+        run: node scripts/update-readme.js
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "auto update repo tree" || echo "No changes"
+          git push
