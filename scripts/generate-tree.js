@@ -2,17 +2,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const now = Date.now();
+const repo = process.env.GITHUB_REPOSITORY;
 
-// ❌ Ignore unwanted folders
+// Ignore heavy folders
 const IGNORE = ['assets', 'uploads', 'node_modules', '.github', 'scripts'];
 
-// Get files
 const files = execSync('git ls-files')
   .toString()
   .split('\n')
   .filter(f => f && !IGNORE.some(i => f.startsWith(i)));
 
-// Get last commit date
 function getLastCommit(file) {
   try {
     const output = execSync(`git log -1 --format=%ct -- "${file}"`).toString().trim();
@@ -22,7 +21,7 @@ function getLastCommit(file) {
   }
 }
 
-// Build nested tree
+// Build tree
 function buildTree(files) {
   const root = {};
 
@@ -41,8 +40,8 @@ function buildTree(files) {
   return root;
 }
 
-// Print tree properly with indentation
-function printTree(node, prefix = '') {
+// Print tree with delete links
+function printTree(node, prefix = '', path = '') {
   let output = '';
   const keys = Object.keys(node);
 
@@ -50,21 +49,24 @@ function printTree(node, prefix = '') {
     const isLast = index === keys.length - 1;
     const connector = isLast ? '└── ' : '├── ';
 
+    const currentPath = path ? `${path}/${key}` : key;
+
     if (node[key] === null) {
-      const lastCommit = getLastCommit(prefix + key);
+      const lastCommit = getLastCommit(currentPath);
       if (!lastCommit) return;
 
       const ageDays = Math.floor((now - lastCommit) / (1000 * 60 * 60 * 24));
       const lastUpdated = new Date(lastCommit).toISOString().split('T')[0];
 
-      output += `${connector}📄 ${key} (📅 ${lastUpdated}, ⏳ ${ageDays}d)\n`;
+      const deleteLink = `https://github.com/${repo}/blob/main/${currentPath}`;
+
+      output += `${connector}📄 ${key} | 📅 ${lastUpdated} | ⏳ ${ageDays}d | 🗑 [Delete](${deleteLink})\n`;
     } else {
       output += `${connector}📁 ${key}/\n`;
 
-      const nextPrefix = prefix + key + '/';
       const childIndent = isLast ? '    ' : '│   ';
 
-      output += printTree(node[key], nextPrefix)
+      output += printTree(node[key], prefix + key + '/', currentPath)
         .split('\n')
         .map(line => (line ? childIndent + line : line))
         .join('\n');
@@ -77,7 +79,7 @@ function printTree(node, prefix = '') {
 const tree = buildTree(files);
 
 const finalOutput = `
-## 📂 Clean Repository Structure
+## 📂 Smart Repository Explorer
 
 \`\`\`
 ${printTree(tree)}
@@ -86,4 +88,4 @@ ${printTree(tree)}
 
 fs.writeFileSync('repo-tree.md', finalOutput);
 
-console.log("✅ Proper tree generated");
+console.log("✅ Tree with delete links generated");
