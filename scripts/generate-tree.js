@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const now = Date.now();
 
-// ❌ Ignore these folders (IMPORTANT)
-const IGNORE = ['assets', 'node_modules', '.github', 'scripts'];
+// ❌ Ignore unwanted folders
+const IGNORE = ['assets', 'uploads', 'node_modules', '.github', 'scripts'];
 
 // Get files
 const files = execSync('git ls-files')
@@ -22,13 +22,13 @@ function getLastCommit(file) {
   }
 }
 
-// Build tree
+// Build nested tree
 function buildTree(files) {
-  const tree = {};
+  const root = {};
 
   files.forEach(file => {
     const parts = file.split('/');
-    let current = tree;
+    let current = root;
 
     parts.forEach((part, index) => {
       if (!current[part]) {
@@ -38,27 +38,38 @@ function buildTree(files) {
     });
   });
 
-  return tree;
+  return root;
 }
 
-// Generate tree view
-function printTree(obj, prefix = '') {
+// Print tree properly with indentation
+function printTree(node, prefix = '') {
   let output = '';
+  const keys = Object.keys(node);
 
-  for (const key in obj) {
-    if (obj[key] === null) {
+  keys.forEach((key, index) => {
+    const isLast = index === keys.length - 1;
+    const connector = isLast ? '└── ' : '├── ';
+
+    if (node[key] === null) {
       const lastCommit = getLastCommit(prefix + key);
-      if (!lastCommit) continue;
+      if (!lastCommit) return;
 
       const ageDays = Math.floor((now - lastCommit) / (1000 * 60 * 60 * 24));
       const lastUpdated = new Date(lastCommit).toISOString().split('T')[0];
 
-      output += `├── 📄 ${key} (📅 ${lastUpdated}, ⏳ ${ageDays}d)\n`;
+      output += `${connector}📄 ${key} (📅 ${lastUpdated}, ⏳ ${ageDays}d)\n`;
     } else {
-      output += `├── 📁 ${key}/\n`;
-      output += printTree(obj[key], prefix + key + '/');
+      output += `${connector}📁 ${key}/\n`;
+
+      const nextPrefix = prefix + key + '/';
+      const childIndent = isLast ? '    ' : '│   ';
+
+      output += printTree(node[key], nextPrefix)
+        .split('\n')
+        .map(line => (line ? childIndent + line : line))
+        .join('\n');
     }
-  }
+  });
 
   return output;
 }
@@ -66,7 +77,7 @@ function printTree(obj, prefix = '') {
 const tree = buildTree(files);
 
 const finalOutput = `
-## 📂 Repository Structure
+## 📂 Clean Repository Structure
 
 \`\`\`
 ${printTree(tree)}
@@ -75,4 +86,4 @@ ${printTree(tree)}
 
 fs.writeFileSync('repo-tree.md', finalOutput);
 
-console.log("Clean tree generated ✅");
+console.log("✅ Proper tree generated");
